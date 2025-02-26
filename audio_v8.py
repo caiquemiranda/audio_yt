@@ -7,6 +7,7 @@ import requests
 from io import BytesIO
 import threading
 import re
+import os
 
 
 def on_progress(stream, chunk, bytes_remaining):
@@ -19,6 +20,10 @@ def on_progress(stream, chunk, bytes_remaining):
 
 def mostrar_preview():
     url = url_entry.get()
+    if not url:
+        messagebox.showerror("Erro", "Por favor, insira uma URL válida")
+        return
+        
     try:
         yt = YouTube(url)
         image_url = yt.thumbnail_url
@@ -31,7 +36,7 @@ def mostrar_preview():
         preview_label.configure(image=img)
         preview_label.image = img  # Mantém uma referência
     except Exception as e:
-        messagebox.showerror("Erro", str(e))
+        messagebox.showerror("Erro", f"Erro ao carregar preview: {str(e)}")
 
 
 def limpar_nome_arquivo(nome):
@@ -41,7 +46,12 @@ def limpar_nome_arquivo(nome):
 
 
 def baixar_e_converter_para_mp3(url):
+    temp_file = 'temp_audio'
     try:
+        if not url:
+            messagebox.showerror("Erro", "Por favor, insira uma URL válida")
+            return
+            
         yt = YouTube(url)
         yt.register_on_progress_callback(on_progress)
         video = yt.streams.filter(only_audio=True).first()
@@ -49,22 +59,32 @@ def baixar_e_converter_para_mp3(url):
         titulo_video = limpar_nome_arquivo(yt.title)
         destino = f"{titulo_video}.mp3"
 
-        out_file = video.download(filename='temp_audio')
-        # Define a barra de progresso para completada
+        # Download do arquivo
+        out_file = video.download(filename=temp_file)
         progress_bar['value'] = 100
         root.update_idletasks()
 
-        audio_clip = AudioFileClip('temp_audio')
+        # Conversão para MP3
+        audio_clip = AudioFileClip(temp_file)
         audio_clip.write_audiofile(destino)
         audio_clip.close()
 
+        # Limpa o arquivo temporário
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
+
         messagebox.showinfo(
             "Sucesso", f"Áudio baixado e convertido para MP3: {destino}")
-        progress_bar['value'] = 0  # Reseta a barra de progresso
     except Exception as e:
-        messagebox.showerror("Erro", str(e))
-        # Reseta a barra de progresso em caso de erro
-        progress_bar['value'] = 0
+        messagebox.showerror("Erro", f"Erro durante o download/conversão: {str(e)}")
+    finally:
+        # Garante que o arquivo temporário seja removido mesmo em caso de erro
+        if os.path.exists(temp_file):
+            try:
+                os.remove(temp_file)
+            except:
+                pass
+        progress_bar['value'] = 0  # Reseta a barra de progresso
 
 
 def iniciar_download_thread():
