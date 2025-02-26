@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from pytube import YouTube
-from moviepy.editor import *
 from PIL import Image, ImageTk
 import requests
 from io import BytesIO
 import threading
 import re
 import os
+from pydub import AudioSegment
 
 
 def on_progress(stream, chunk, bytes_remaining):
@@ -57,21 +57,21 @@ def baixar_e_converter_para_mp3(url):
         video = yt.streams.filter(only_audio=True).first()
 
         titulo_video = limpar_nome_arquivo(yt.title)
+        temp_file_mp4 = f"{temp_file}.mp4"
         destino = f"{titulo_video}.mp3"
 
         # Download do arquivo
-        out_file = video.download(filename=temp_file)
+        out_file = video.download(filename=temp_file_mp4)
         progress_bar['value'] = 100
         root.update_idletasks()
 
-        # Conversão para MP3
-        audio_clip = AudioFileClip(temp_file)
-        audio_clip.write_audiofile(destino)
-        audio_clip.close()
+        # Conversão para MP3 usando pydub
+        audio = AudioSegment.from_file(temp_file_mp4, format="mp4")
+        audio.export(destino, format="mp3")
 
         # Limpa o arquivo temporário
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
+        if os.path.exists(temp_file_mp4):
+            os.remove(temp_file_mp4)
 
         messagebox.showinfo(
             "Sucesso", f"Áudio baixado e convertido para MP3: {destino}")
@@ -79,9 +79,9 @@ def baixar_e_converter_para_mp3(url):
         messagebox.showerror("Erro", f"Erro durante o download/conversão: {str(e)}")
     finally:
         # Garante que o arquivo temporário seja removido mesmo em caso de erro
-        if os.path.exists(temp_file):
+        if os.path.exists(temp_file_mp4):
             try:
-                os.remove(temp_file)
+                os.remove(temp_file_mp4)
             except:
                 pass
         progress_bar['value'] = 0  # Reseta a barra de progresso
