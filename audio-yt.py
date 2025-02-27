@@ -1,4 +1,3 @@
-# importing packages
 import flet as ft
 from pytubefix import YouTube
 import os
@@ -8,17 +7,17 @@ from io import BytesIO
 from PIL import Image
 
 def main(page: ft.Page):
-    # Configurações da página
+
     page.title = "YouTube Audio Downloader"
     page.window_width = 800
     page.window_height = 600
     page.padding = 30
     page.theme_mode = "light"
     
-    # Variáveis globais
+
     current_download_path = os.path.join(os.path.expanduser("~"), "Downloads")
     
-    # Componentes da interface
+
     url_input = ft.TextField(
         label="URL do YouTube",
         hint_text="Cole aqui a URL do vídeo",
@@ -36,7 +35,7 @@ def main(page: ft.Page):
         visible=False
     )
     
-    # Container para preview
+
     preview_container = ft.Container(
         width=300,
         height=200,
@@ -96,11 +95,11 @@ def main(page: ft.Page):
             # Carregar informações do vídeo
             yt = YouTube(url)
             
-            # Atualizar título e duração
+
             video_info.controls[0].value = yt.title
             video_info.controls[1].value = f"Duração: {yt.length//60}:{yt.length%60:02d}"
             
-            # Carregar thumbnail
+
             response = requests.get(yt.thumbnail_url)
             if response.status_code == 200:
                 preview_container.content = ft.Image(
@@ -135,7 +134,7 @@ def main(page: ft.Page):
                 page.update()
                 return
             
-            # Mostrar progresso
+
             progress_bar.visible = True
             status_text.value = "Iniciando download..."
             status_text.color = "blue"
@@ -144,21 +143,17 @@ def main(page: ft.Page):
             # Download do áudio
             yt = YouTube(url)
             video = yt.streams.filter(only_audio=True).first()
-            
-            # Download do arquivo
+
             out_file = video.download(output_path=current_download_path)
             
-            # Converter para MP3
             base, ext = os.path.splitext(out_file)
             new_file = base + '.mp3'
             
-            # Se já existir um arquivo com mesmo nome, remove
             if os.path.exists(new_file):
                 os.remove(new_file)
             
             os.rename(out_file, new_file)
             
-            # Atualizar status
             status_text.value = "Download concluído com sucesso!"
             status_text.color = "green"
             progress_bar.visible = False
@@ -170,7 +165,6 @@ def main(page: ft.Page):
             progress_bar.visible = False
             page.update()
     
-    # Botões
     preview_button = ft.ElevatedButton(
         "Visualizar",
         icon=ft.icons.PREVIEW,
@@ -192,10 +186,8 @@ def main(page: ft.Page):
         width=150
     )
     
-    # Texto mostrando pasta atual
     download_path_text = ft.Text(f"Pasta: {current_download_path}", size=12, color="grey")
     
-    # Layout da página
     page.add(
         ft.Column(
             controls=[
@@ -218,6 +210,5 @@ def main(page: ft.Page):
         )
     )
 
-# Iniciar aplicação
 if __name__ == "__main__":
     ft.app(target=main)
